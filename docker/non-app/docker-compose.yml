@@ -1,0 +1,18 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pid1-resource-demo
+    ports:
+      - "8000:8000"
+    init: false     # we don't need docker's built-in --init, tini already handles PID1
+    deploy:
+      resources:
+        limits:          # hard ceiling - container CANNOT exceed this
+          cpus: "0.50"    # half of one CPU core
+          memory: 256M
+        reservations:     # soft guarantee - scheduler tries to keep this available
+          cpus: "0.25"
+          memory: 128M
+    restart: unless-stopped
