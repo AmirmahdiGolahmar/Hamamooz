@@ -1,0 +1,72 @@
+# 04-memos.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: memos-data
+  namespace: memos
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memos
+  namespace: memos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memos
+  template:
+    metadata:
+      labels:
+        app: memos
+    spec:
+      containers:
+      - name: memos
+        image: neosmemo/memos:stable
+        envFrom:
+        - configMapRef:
+            name: memos-config
+        env:
+        - name: MEMOS_DSN
+          valueFrom:
+            secretKeyRef:
+              name: memos-db-secret
+              key: MEMOS_DSN
+        ports:
+        - containerPort: 5230
+        volumeMounts:
+        - name: memos-data
+          mountPath: /var/opt/memos
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 5230
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 5230
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      volumes:
+      - name: memos-data
+        persistentVolumeClaim:
+          claimName: memos-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: memos
+  namespace: memos
+spec:
+  selector:
+    app: memos
+  ports:
+  - port: 80
+    targetPort: 5230

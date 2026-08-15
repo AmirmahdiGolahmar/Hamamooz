@@ -1,0 +1,65 @@
+# 03-postgres.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: memos-postgres
+  namespace: memos
+spec:
+  clusterIP: None
+  selector:
+    app: memos-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: memos-postgres
+  namespace: memos
+spec:
+  serviceName: memos-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memos-postgres
+  template:
+    metadata:
+      labels:
+        app: memos-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:17
+        envFrom:
+        - configMapRef:
+            name: memos-config
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: memos-db-secret
+              key: POSTGRES_PASSWORD
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: pgdata
+          mountPath: /var/lib/postgresql/data
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "memos", "-d", "memos"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command: ["pg_isready", "-U", "memos", "-d", "memos"]
+          initialDelaySeconds: 15
+          periodSeconds: 10
+  volumeClaimTemplates:
+  - metadata:
+      name: pgdata
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 2Gi

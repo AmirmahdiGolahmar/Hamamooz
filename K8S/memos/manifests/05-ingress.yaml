@@ -1,0 +1,19 @@
+# 05-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: memos-ingress
+  namespace: memos
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: golahmar.osdl.ir
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: memos
+            port:
+              number: 80

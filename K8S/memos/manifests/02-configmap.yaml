@@ -1,0 +1,11 @@
+# 02-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: memos-config
+  namespace: memos
+data:
+  POSTGRES_DB: "memos"
+  POSTGRES_USER: "memos"
+  MEMOS_DRIVER: "postgres"
+  MEMOS_PORT: "5230"
